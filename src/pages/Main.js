@@ -15,11 +15,16 @@ import {
 import { MaterialIcons } from "@expo/vector-icons";
 
 import api from "../services/api";
+import socket, {
+  connect,
+  disconnect,
+  subscribeToNewDevs
+} from "../services/socket";
 
 function Main({ navigation }) {
   const [devs, setDevs] = useState([]);
   const [currentRegion, setCurrentRegion] = useState(null);
-  const [techs, setTechs] = useState('');
+  const [techs, setTechs] = useState("");
 
   useEffect(() => {
     async function loadInitialPosition() {
@@ -41,6 +46,18 @@ function Main({ navigation }) {
     loadInitialPosition();
   }, []);
 
+  useEffect(() => {
+    subscribeToNewDevs(dev => setDevs([...devs, dev]));
+  }, [devs]);
+
+  function setupWebsocket() {
+    disconnect();
+
+    const { latitude, longitude } = currentRegion;
+
+    connect(latitude, longitude, techs);
+  }
+
   async function loadDevs() {
     const { latitude, longitude } = currentRegion;
 
@@ -48,10 +65,12 @@ function Main({ navigation }) {
       params: {
         latitude,
         longitude,
-        techs,
+        techs
       }
     });
+
     setDevs(response.data.devs);
+    setupWebsocket();
   }
 
   function handleRegionChanged(region) {
@@ -123,10 +142,10 @@ const styles = StyleSheet.create({
   },
 
   avatar: {
-    width: 56,
-    height: 56,
-    borderRadius: 4,
-    borderWidth: 4,
+    width: 52,
+    height: 52,
+    borderRadius: 50,
+    borderWidth: 1,
     borderColor: "#fff"
   },
 
